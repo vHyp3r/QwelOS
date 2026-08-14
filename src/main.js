@@ -483,15 +483,89 @@ const focusWindow = (appId) => {
     win.classList.toggle('focused', active)
     win.style.zIndex = active ? '20' : '10'
   })
+
+  const dockButtons = document.querySelectorAll('.dock-icon')
+  dockButtons.forEach((button) => {
+    const active = button.dataset.app === appId
+    button.classList.toggle('active', active)
+    button.classList.toggle('open', active)
+  })
+
+  const taskbarApps = document.querySelectorAll('.taskbar-app')
+  taskbarApps.forEach((button) => {
+    const active = button.dataset.app === appId
+    button.classList.toggle('active', active)
+  })
+}
+
+const updateTaskbarState = () => {
+  const center = document.querySelector('.taskbar-center')
+  if (!center) return
+
+  const openApps = [...document.querySelectorAll('.window')].map((win) => win.dataset.appId)
+  const visible = new Set(openApps)
+
+  center.innerHTML = ''
+
+  if (!visible.size) {
+    const placeholder = document.createElement('div')
+    placeholder.className = 'taskbar-app inactive'
+    placeholder.textContent = 'No apps open'
+    center.appendChild(placeholder)
+    return
+  }
+
+  appCatalog.forEach((app) => {
+    if (!visible.has(app.id)) return
+
+    const button = document.createElement('button')
+    button.type = 'button'
+    button.className = 'taskbar-app'
+    button.dataset.app = app.id
+    button.textContent = app.icon
+    button.title = app.title
+    button.addEventListener('click', () => {
+      const win = document.querySelector(`.window[data-app-id="${app.id}"]`)
+      if (win) {
+        focusWindow(app.id)
+      } else {
+        showWindow(app.id)
+      }
+    })
+
+    const activeWindow = document.querySelector('.window.focused')
+    if (activeWindow && activeWindow.dataset.appId === app.id) {
+      button.classList.add('active')
+    }
+
+    center.appendChild(button)
+  })
 }
 
 const toggleStartMenu = () => {
   const menu = document.querySelector('.start-menu')
+  const settings = document.querySelector('.quick-settings')
   menu.classList.toggle('visible')
+  if (menu.classList.contains('visible')) {
+    settings.classList.remove('visible')
+  }
 }
 
 const closeStartMenu = () => {
   document.querySelector('.start-menu').classList.remove('visible')
+}
+
+const toggleQuickSettings = () => {
+  const settings = document.querySelector('.quick-settings')
+  const menu = document.querySelector('.start-menu')
+  settings.classList.toggle('visible')
+  if (settings.classList.contains('visible')) {
+    menu.classList.remove('visible')
+  }
+}
+
+const closeQuickSettings = () => {
+  document.querySelector('.quick-settings').classList.remove('visible')
 }
 
 document.querySelector('#app').innerHTML = `
@@ -517,9 +591,101 @@ document.querySelector('#app').innerHTML = `
     <div class="window-layer"></div>
 
     <div class="start-menu">
-      <div class="start-menu-item" data-app="terminal">Terminal</div>
-      <div class="start-menu-item" data-app="browser">Browser</div>
-      <div class="start-menu-item" data-app="files">Files</div>
+      <div class="start-menu-search">
+        <span>⌕</span>
+        <input type="text" value="Search" aria-label="Search apps" />
+      </div>
+
+      <div class="start-menu-section">
+        <div class="section-label">Pinned</div>
+        <div class="start-menu-grid">
+          <button class="start-menu-item" data-app="browser">
+            <span class="menu-app-icon purple">◌</span>
+            <span>Browser</span>
+          </button>
+          <button class="start-menu-item" data-app="files">
+            <span class="menu-app-icon blue">⌂</span>
+            <span>Files</span>
+          </button>
+          <button class="start-menu-item" data-app="terminal">
+            <span class="menu-app-icon green">⌘</span>
+            <span>Terminal</span>
+          </button>
+          <button class="start-menu-item" data-app="browser">
+            <span class="menu-app-icon gold">◍</span>
+            <span>Notes</span>
+          </button>
+          <button class="start-menu-item" data-app="files">
+            <span class="menu-app-icon pink">▣</span>
+            <span>Gallery</span>
+          </button>
+          <button class="start-menu-item" data-app="terminal">
+            <span class="menu-app-icon cyan">⋯</span>
+            <span>More</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="start-menu-section compact">
+        <div class="section-label">Recommended</div>
+        <div class="start-menu-recommended">
+          <div class="rec-item">
+            <span class="rec-icon">◌</span>
+            <div>
+              <strong>Welcome to QwelOS</strong>
+              <small>Recently opened</small>
+            </div>
+          </div>
+          <div class="rec-item">
+            <span class="rec-icon">⌂</span>
+            <div>
+              <strong>Project Files</strong>
+              <small>Updated today</small>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="start-menu-footer">
+        <button class="power-button">Power</button>
+      </div>
+    </div>
+
+    <div class="quick-settings">
+      <div class="qs-header">
+        <div>
+          <strong>Quick Settings</strong>
+        </div>
+        <button class="qs-close">✕</button>
+      </div>
+
+      <div class="qs-grid">
+        <div class="qs-tile active"><span>Wi‑Fi</span><strong>Home</strong></div>
+        <div class="qs-tile active"><span>Bluetooth</span><strong>On</strong></div>
+        <div class="qs-tile"><span>Airplane</span><strong>Off</strong></div>
+        <div class="qs-tile active"><span>Focus</span><strong>On</strong></div>
+      </div>
+
+      <div class="qs-slider-row">
+        <span>Brightness</span>
+        <div class="qs-slider"><span></span></div>
+      </div>
+
+      <div class="qs-slider-row">
+        <span>Volume</span>
+        <div class="qs-slider"><span></span></div>
+      </div>
+
+      <div class="qs-weather">
+        <div>
+          <small>Now</small>
+          <strong>17°</strong>
+        </div>
+        <div class="weather-meta">
+          <span>☀️</span>
+          <small>Clear sky</small>
+        </div>
+      </div>
     </div>
 
     <div class="dock">
@@ -531,10 +697,16 @@ document.querySelector('#app').innerHTML = `
     <div class="taskbar">
       <button class="start-button">Start</button>
       <div class="taskbar-center"></div>
-      <div class="taskbar-time">10:45</div>
+      <div class="taskbar-tray">
+        <span>⚙</span>
+        <span>🔊</span>
+        <button class="taskbar-time">10:45</button>
+      </div>
     </div>
   </div>
 `
+
+updateTaskbarState()
 
 const startButton = document.querySelector('.start-button')
 startButton.addEventListener('click', (event) => {
@@ -542,10 +714,24 @@ startButton.addEventListener('click', (event) => {
   toggleStartMenu()
 })
 
+const quickSettingsButton = document.querySelector('.taskbar-time')
+quickSettingsButton.addEventListener('click', (event) => {
+  event.stopPropagation()
+  toggleQuickSettings()
+})
+
+document.querySelector('.qs-close').addEventListener('click', (event) => {
+  event.stopPropagation()
+  closeQuickSettings()
+})
+
 document.addEventListener('click', (event) => {
   const inMenu = event.target.closest('.start-menu')
   const inStart = event.target.closest('.start-button')
+  const inQuickSettings = event.target.closest('.quick-settings')
+  const inTime = event.target.closest('.taskbar-time')
   if (!inMenu && !inStart) closeStartMenu()
+  if (!inQuickSettings && !inTime) closeQuickSettings()
 })
 
 for (const selector of ['.desktop-icon', '.dock-icon', '.start-menu-item']) {
@@ -554,10 +740,12 @@ for (const selector of ['.desktop-icon', '.dock-icon', '.start-menu-item']) {
       const appId = button.dataset.app
       showWindow(appId)
       closeStartMenu()
+      closeQuickSettings()
       event.stopPropagation()
     })
   })
 }
 
 showWindow('browser')
+updateTaskbarState()
 
