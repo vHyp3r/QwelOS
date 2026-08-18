@@ -463,6 +463,7 @@ const showWindow = (appId) => {
   win.style.transform = 'none'
 
   focusWindow(appId)
+  updateTaskbarState()
 }
 
 const closeWindow = (appId) => {
@@ -474,6 +475,7 @@ const closeWindow = (appId) => {
   app.isMinimized = false
   app.isFullscreen = false
   win.remove()
+  updateTaskbarState()
 }
 
 const focusWindow = (appId) => {
